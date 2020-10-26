@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Mobile Programming Mid Term</string>
+    <string name="title">선택을 시작하겠습니까?</string>
+    <string name="toggle">선택함</string>
+    <string name="add">맛집 등록</string>
+    <string name="idol">여자한테 잘해야 \n자다가도 떡이 생긴다</string>
+</resources>
