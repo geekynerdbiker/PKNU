@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Mobile Programming</string>
+    <string name="title">IT융합응용공학과</string>
+    <string name="intro">IT융합응용공학과는 디지털 기술의 발전에 따라 기존 정보기술이 IT에 국한된 세부 전문기술영역에서 다양한 분야의 서비스 및 인프라 기술로 확대됨에 따라, 여러 가지 전문 응용분야와 융합할 수 있는 창의적 전문 IT 인력을 양성하는데 그 목표를 두고 있다. 이를 위해 기존 컴퓨터 분야의 핵심 기초 분야는 물론, 타 분야와 연계 가능한 응용 분야에 활용될 수 있는 창의성과 현장 적응력이 뛰어난 인재를 양성하고, 글로벌 추세에 경쟁력을 지닌 참여, 공유, 개방의 능력을 지닌 지성인 및 교양인을 육성한다.
+ </string>
+    <string name="b1">교수진 소개</string>
+    <string name="b2">학생 커뮤니티</string>
+    <string name="b3">공지사항</string>
+
+    <string name="title_prof">김영봉 교수</string>
+    <string name="title2_prof">(ybkim@pknu.ac.kr)</string>
+    <string name="info_prof">연구실명 : 그래픽스 및 애니메이션 연구실\n\t\t\t\t\t\t\t\t(웅비관 1311호실) \n전화번호 : 629-6248</string>
+
+    <string name="title_community">학생 커뮤니티</string>
+    <string name="title2_community">알고라 (Algora)</string>
+    <string name="info_community">부경대학교 알고리즘 스터디 알고라입니다. 매주 난이도별로 엄선된 문제들을 풀면서 컴퓨터적 사고와 문제해결 능력을 기르기 위한 스터디입니다.</string>
+    <string name="community_b1">소속 학생</string>
+
+    <string name="student_name">안희수</string>
+    <string name="student_info_basic">단과대학 : 공과대학\n학과 : IT융합응용공학과\n학번 : 201512117\n개발정보 : github.com/spaceranger-lightyear</string>
+
+    <string name="title_announce">공지사항</string>
+    <string name="title2_announce">[AI 학습용 데이터 라벨링 및 품질 검증 - 단기 알바 모집]</string>
+    <string name="info_announce">- 채용 기업: (주)인사이트정보
+        \n\n- 업무: AI 학습용 데이터 구축을 위한 데이터 라벨링 및 데이터 품질 검증 (단순 업무로, 전문 지식을 요구하지 않음)
+        \n- 기간: 11월~12월, 2달 예정임. 업무 시작 일정은 다소 유동적임
+        \n- 근무조건: 오전 9시~오후 6시(하루 8시간) 근무, 최저임금 보장, 4대보험 가입
+        \n\n* 관심있는 분은 10월29일(목)까지 신상욱 교수(051-629-6249, shinsu@pknu.ac.kr)로 문의</string>
+
+    <string name="b_return">돌아가기</string>
+</resources>
