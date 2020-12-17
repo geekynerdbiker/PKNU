@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Mobile Programming Mid Term</string>
+    <string name="title">선택을 시작하겠습니까?</string>
+    <string name="toggle">선택함</string>
+    <string name="off">OFF</string>
+    <string name="on">ON</string>
+    <string name="question">좋아하는 과목은 무엇인가?</string>
+    <string name="alg">알고리즘</string>
+    <string name="obj">객체지향 프로그래밍</string>
+    <string name="and">안드로이드 프로그래밍</string>
+    <string name="exit">종료</string>
+    <string name="go_back">처음으로</string>
+</resources>
