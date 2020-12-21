@@ -1,201 +1,91 @@
+import os
 import tensorflow as tf
-import matplotlib.pyplot as plt
+from tensorflow import keras
+import numpy as np
 import glob
-from pathlib import Path
+import cv2
 
 
-# Before run
-# Remove under files from /images, /annotations/trimaps
-# Remove line from /annotations/trainval.txt, /annotations/test.txt
-# Abyssinian_5
-# Egyptian_Mau_14, 138, 156, 186
+def load_image(addr):
+    img = cv2.imread(addr)
+    img = cv2.resize(img, (128, 128), interpolation=cv2.INTER_CUBIC)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-def normalize(input_image, input_mask):
-    input_image = tf.cast(input_image, tf.float32) / 255.0
-    input_mask -= 1
-    return input_image, input_mask
+    img = img.astype(np.float32)
+    img = (img - np.mean(img)) / np.std(img)
+    return img
 
 
-def load_image_train(img_path, mask_path):
-    image = tf.io.read_file(img_path)
-    image = tf.image.decode_jpeg(image)
-    image = tf.image.resize(image, [128, 128])
+def load_data():
+    dataset_dir = 'Oxford-IIIT_Pet_Dataset'
+    image_paths = glob.glob('{}/images/*.jpg'.format(dataset_dir))
+    image_paths.sort()
 
-    mask = tf.io.read_file(mask_path)
-    mask = tf.io.decode_png(mask, channels=0, dtype=tf.dtypes.uint8)
-    mask = tf.image.resize(mask, [128, 128])
+    train_images = []
+    train_labels = []
+    test_images = []
+    test_labels = []
 
-    if tf.random.uniform(()) > 0.5:
-        image = tf.image.flip_left_right(image)
-        mask = tf.image.flip_left_right(mask)
+    trainval_list = open('{}/annotations/trainval.txt'.format(dataset_dir), 'r')
+    test_list = open('{}/annotations/test.txt'.format(dataset_dir), 'r')
 
-    image, mask = normalize(image, mask)
-    return image, mask
+    Lines = trainval_list.readlines()
+    for line in Lines:
+        train_images.append(load_image(os.path.join(dataset_dir, 'images', line.split()[0] + '.jpg')))
+        train_labels.append(float(line.split()[2]) - 1)
 
+    Lines2 = test_list.readlines()
+    for line in Lines2:
+        test_images.append(load_image(os.path.join(dataset_dir, 'images', line.split()[0] + '.jpg')))
+        test_labels.append(float(line.split()[2]) - 1)
 
-def load_image_test(img_path, mask_path):
-    image = tf.io.read_file(img_path)
-    image = tf.image.decode_jpeg(image)
-    image = tf.image.resize(image, [128, 128])
+    idxs = np.arange(0, len(train_images))
+    np.random.shuffle(idxs)
+    train_images = np.array(train_images)
+    train_labels = np.array(train_labels)
+    test_images = np.array(test_images)
+    test_labels = np.array(test_labels)
 
-    mask = tf.io.read_file(mask_path)
-    mask = tf.io.decode_png(mask, channels=0, dtype=tf.dtypes.uint8)
-    mask = tf.image.resize(mask, [128, 128])
-
-    image, mask = normalize(image, mask)
-    return image, mask
-
-
-def display_images(display_list):
-    plt.figure(figsize=(15, 15))
-
-    title = ['Input Image', 'True Mask', 'Predicted Mask']
-
-    for i in range(len(display_list)):
-        plt.subplot(1, len(display_list), i + 1)
-        plt.title(title[i])
-        plt.imshow(tf.keras.preprocessing.image.array_to_img(display_list[i]))
-        plt.axis('off')
-    plt.show()
+    return train_images, train_labels, test_images, test_labels
 
 
-def downsample(filters, size, apply_batchnorm=True):
-    initializer = tf.random_normal_initializer(0., 0.02)
+def create_model():
+    model = keras.Sequential([
+        keras.layers.Conv2D(32, kernel_size=3, activation='relu', padding='same', input_shape=(128, 128, 3)),
+        keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same'),
+        keras.layers.Conv2D(64, kernel_size=3, activation='relu', padding='same'),
+        keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same'),
+        keras.layers.Conv2D(128, kernel_size=3, activation='relu', padding='same'),
+        keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same'),
+        keras.layers.Flatten(),
+        keras.layers.Dense(512, activation=tf.nn.relu), keras.layers.Dropout(0.2),
+        keras.layers.Dense(2, activation=tf.nn.softmax)
+    ])
 
-    result = tf.keras.Sequential()
-    result.add(
-        tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
-                               kernel_initializer=initializer, use_bias=False))
+    model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=['accuracy'])
 
-    if apply_batchnorm:
-        result.add(tf.keras.layers.BatchNormalization())
-
-    result.add(tf.keras.layers.LeakyReLU())
-
-    return result
-
-
-def upsample(filters, size, apply_dropout=False):
-    initializer = tf.random_normal_initializer(0., 0.02)
-
-    result = tf.keras.Sequential()
-    result.add(
-        tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
-                                        padding='same',
-                                        kernel_initializer=initializer, use_bias=False))
-
-    result.add(tf.keras.layers.BatchNormalization())
-
-    if apply_dropout:
-        result.add(tf.keras.layers.Dropout(0.5))
-
-    result.add(tf.keras.layers.ReLU())
-    return result
+    model.summary()
+    return model
 
 
-def unet_model(output_channels):
-    inputs = tf.keras.layers.Input(shape=[128, 128, 3])
-    x = inputs
-
-    skips = []
-    for down in down_stack:
-        x = down(x)
-        skips.append(x)
-
-    skips = reversed(skips[:-1])
-
-    for up, skip in zip(up_stack, skips):
-        x = up(x)
-        concat = tf.keras.layers.Concatenate()
-        x = concat([x, skip])
-
-    last = tf.keras.layers.Conv2DTranspose(
-        output_channels, 3, strides=2,
-        padding='same')  # 64x64 -> 128x128
-
-    x = last(x)
-
-    return tf.keras.Model(inputs=inputs, outputs=x)
+def train(model, train_features, train_labels, val_features, val_labels):
+    model.fit(train_features, train_labels, epochs=50, validation_data=(val_features, val_labels))
 
 
-def create_mask(pred_mask):
-    pred_mask = tf.argmax(pred_mask, axis=-1)
-    pred_mask = pred_mask[..., tf.newaxis]
-    return pred_mask[0]
+def train_from_scratch():
+    class_names = ['cat', 'dog']
+    train_features, train_labels, test_features, test_labels = load_data()
+    model = create_model()
+    model.fit(train_features, train_labels, epochs=50, validation_data=(test_features, test_labels))
+    test_loss, test_acc = model.evaluate(test_features, test_labels)
+
+    print('Test accuracy:', test_acc)
+    predictions = model.predict(test_features)
+    print(predictions[0])
+    print(np.argmax(predictions[0]))
+    print(test_labels[0])
 
 
-dataset_dir = 'Oxford-IIIT_Pet_Dataset'
-image_paths = glob.glob('{}/images/*.jpg'.format(dataset_dir))
-label_paths = glob.glob('{}/annotations/trimaps/*.png'.format(dataset_dir))
-image_paths.sort()
-label_paths.sort()
-
-trainval_list = open('{}/annotations/trainval.txt'.format(dataset_dir), 'r')
-Lines = trainval_list.readlines()
-train_data_file_name = [line.split()[0] for line in Lines]
-
-test_list = open('{}/annotations/test.txt'.format(dataset_dir), 'r')
-Lines2 = test_list.readlines()
-test_data_file_name = [line.split()[0] for line in Lines2]
-
-trainval_image_paths = [p for p in image_paths if Path(p).stem in train_data_file_name]
-trainval_label_paths = [p for p in label_paths if Path(p).stem in train_data_file_name]
-
-test_image_paths = [p for p in image_paths if Path(p).stem in test_data_file_name]
-test_label_paths = [p for p in label_paths if Path(p).stem in test_data_file_name]
-
-train_image_path_ds = tf.data.Dataset.from_tensor_slices(trainval_image_paths)
-train_label_path_ds = tf.data.Dataset.from_tensor_slices(trainval_label_paths)
-
-test_image_path_ds = tf.data.Dataset.from_tensor_slices(test_image_paths)
-test_label_path_ds = tf.data.Dataset.from_tensor_slices(test_label_paths)
-
-train_dataset = tf.data.Dataset.zip((train_image_path_ds, train_label_path_ds))
-test_dataset = tf.data.Dataset.zip((test_image_path_ds, test_label_path_ds))
-
-train_ds = train_dataset.map(load_image_train)
-test_ds = test_dataset.map(load_image_test)
-
-TRAIN_LENGTH = len(trainval_image_paths)
-BATCH_SIZE = 64
-BUFFER_SIZE = 1000
-STEPS_PER_EPOCH = TRAIN_LENGTH // BATCH_SIZE
-
-train_dataset = train_ds.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-test_dataset = test_ds.batch(BATCH_SIZE)
-
-OUTPUT_CHANNELS = 3
-
-down_stack = [
-    downsample(64, 3, apply_batchnorm=False),
-    downsample(128, 3),
-    downsample(256, 3),
-    downsample(512, 3),
-    downsample(512, 3),
-]
-
-up_stack = [
-    upsample(512, 3),
-    upsample(256, 3),
-    upsample(128, 3),
-    upsample(64, 3),
-]
-
-model = unet_model(OUTPUT_CHANNELS)
-model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
-
-tf.keras.utils.plot_model(model, show_shapes=True)
-
-EPOCHS = 20
-TEST_LENGTH = len(test_image_paths)
-VALIDATION_STEPS = TEST_LENGTH // BATCH_SIZE
-
-model_history = model.fit(train_dataset, epochs=EPOCHS,
-                          validation_steps=VALIDATION_STEPS,
-                          validation_data=test_dataset, )
-
-loss = model_history.history['loss']
-val_loss = model_history.history['val_loss']
-epochs = range(EPOCHS)
+if __name__ == '__main__':
+    train_from_scratch()
