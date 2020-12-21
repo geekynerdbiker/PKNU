@@ -1,0 +1,21 @@
+<resources>
+    <string name="ITCAE_201512117">no edit</string>
+
+    <string name="app_name">MP Term PJ</string>
+    <string name="init_temp">0°C</string>
+    <string name="temperature">온도 :</string>
+    <string name="feels_like">체감 온도 :</string>
+    <string name="feels_temp">0°C</string>
+    <string name="wind_speed">풍속 :</string>
+    <string name="init_wind">0ms⁻¹</string>
+    <string name="country_code">국가 :</string>
+    <string name="code_here">KR</string>
+    <string name="n_a">N/A</string>
+    <string name="check_weather">날씨 보기</string>
+    <string name="go_back">뒤로가기</string>
+    <string name="city_text">도시 :</string>
+    <string name="city_here">Busan</string>
+    <string name="set_values">설정</string>
+    <string name="humidity">습도 :</string>
+    <string name="init_humid">0%</string>
+</resources>
